@@ -1,0 +1,66 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+// Note that some adapters may set a maximum length for the String type by default, please ensure your strings are long
+// enough when changing adapters.
+// See https://www.prisma.io/docs/orm/reference/prisma-schema-reference#string for more information
+datasource db {
+  provider = "sqlite"
+  url      = "file:dev.sqlite"
+}
+
+model Session {
+  id             String   @id @default(uuid())
+  shop           String
+  state          String
+  isOnline       Boolean
+  scope          String
+  expires        DateTime?
+  accessToken    String
+  userId         String?
+  firstName      String?  // Check if these fields exist
+  lastName       String?  // Check if these fields exist
+  email          String?  // Check if this field exists
+  accountOwner   Boolean?
+  locale         String?
+  collaborator   Boolean?
+  emailVerified  Boolean?
+}
+
+
+
+model Shop {
+  id             String           @id @default(cuid())
+  name           String
+  domain         String           @unique  
+  accessToken    String?
+  isActive       Boolean          @default(true)
+  abandonedCarts abandonedCart[]
+}
+
+model Customer {
+  id             String           @id @default(cuid())
+  firstName      String
+  lastName       String
+  email          String
+  abandonedCarts abandonedCart[]
+}
+
+model abandonedCart {
+  id           String    @id @default(cuid())
+  shopId       String
+  shop         Shop      @relation(fields: [shopId], references: [id])
+  customerId   String
+  customer     Customer  @relation(fields: [customerId], references: [id])
+  email        String
+  items        String    // Stores an array of cart items
+  createdAt    DateTime  @default(now())
+  reminderSent Boolean   @default(false)
+
+  @@index([shopId])
+  @@index([customerId])
+}
