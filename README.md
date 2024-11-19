@@ -26,7 +26,7 @@ at the top there is a back arrow to redirect to home page
 - Indicate the intervals of reminders(3 hrs, 24 hours 72 hours)
 - card for each email sent at each interval. 
 -Give link for customizing the template for each email sent at different times(Connects to customizeTemplateCard component)
-After customiyaion of the 3 emails -  a Launch action button
+After customizaion of the 3 emails -  a Launch action button
 
 customizeTemplateCard
 have default
@@ -38,6 +38,11 @@ option to change template image
 fetch the products in cart
 Discount
 footer message - Reach us on (phone number/email) and we'll see you through the next steps.
+
+
+**BEHAVIOR OF CUSTOMIZED TEMPLATE**
+1. Attach specific customer's abandoned carts
+
 
 
 PROMOTION CARD COMPONENT

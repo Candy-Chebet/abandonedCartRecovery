@@ -51,15 +51,15 @@ model Customer {
 }
 
 model abandonedCart {
-  id           String    @id @default(cuid())
-  shopId       String
-  shop         Shop      @relation(fields: [shopId], references: [id])
-  customerId   String
-  customer     Customer  @relation(fields: [customerId], references: [id])
-  email        String
-  items        String    // Stores an array of cart items
-  createdAt    DateTime  @default(now())
-  reminderSent Boolean   @default(false)
+  id             String   @id @default(cuid())
+  shopId         String
+  shop           Shop     @relation(fields: [shopId], references: [id])
+  customerId     String
+  customer       Customer @relation(fields: [customerId], references: [id])
+  email          String
+  items          String
+  createdAt      DateTime @default(now())
+  reminderSent   Boolean  @default(false)
   reminderSentAt DateTime?
 
   @@index([shopId])
