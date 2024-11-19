@@ -3,7 +3,7 @@
 client_id = "eb5a7b480ff3b6617e67690967f1ac29"
 name = "Abandoned Cart Recovery"
 handle = "abandoned-cart-recovery-4"
-application_url = "https://bucks-participation-affiliates-adaptive.trycloudflare.com"
+application_url = "https://hart-newark-maker-their.trycloudflare.com"
 embedded = true
 
 [build]
@@ -16,9 +16,9 @@ scopes = "write_products"
 
 [auth]
 redirect_urls = [
-  "https://bucks-participation-affiliates-adaptive.trycloudflare.com/auth/callback",
-  "https://bucks-participation-affiliates-adaptive.trycloudflare.com/auth/shopify/callback",
-  "https://bucks-participation-affiliates-adaptive.trycloudflare.com/api/auth/callback"
+  "https://hart-newark-maker-their.trycloudflare.com/auth/callback",
+  "https://hart-newark-maker-their.trycloudflare.com/auth/shopify/callback",
+  "https://hart-newark-maker-their.trycloudflare.com/api/auth/callback"
 ]
 
 [webhooks]

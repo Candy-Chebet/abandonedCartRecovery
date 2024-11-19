@@ -3,6 +3,8 @@
   "private": true,
   "scripts": {
     "build": "remix vite:build",
+    "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js",
+    "test:watch": "node --experimental-vm-modules node_modules/jest/bin/jest.js --watch",
     "dev": "shopify app dev",
     "config:link": "shopify app config link",
     "generate": "shopify app generate",
@@ -23,6 +25,9 @@
     "node": "^18.20 || ^20.10 || >=21.0.0"
   },
   "dependencies": {
+    "@chakra-ui/react": "^3.1.2",
+    "@emotion/react": "^11.13.3",
+    "@emotion/styled": "^11.13.0",
     "@prisma/client": "^5.11.0",
     "@react-email/components": "^0.0.28",
     "@remix-run/dev": "^2.7.1",
@@ -33,7 +38,10 @@
     "@shopify/polaris": "^12.0.0",
     "@shopify/shopify-app-remix": "^3.4.0",
     "@shopify/shopify-app-session-storage-prisma": "^5.1.5",
+    "@tanstack/react-query": "^5.60.5",
+    "framer-motion": "^11.11.17",
     "isbot": "^5.1.0",
+    "node-cron": "^3.0.3",
     "prisma": "^5.11.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
@@ -43,12 +51,17 @@
   "devDependencies": {
     "@remix-run/eslint-config": "^2.7.1",
     "@shopify/api-codegen-preset": "^1.1.1",
+    "@swc/core": "^1.9.1",
+    "@swc/jest": "^0.2.37",
     "@types/eslint": "^8.40.0",
+    "@types/jest": "^29.5.14",
     "@types/node": "^22.2.0",
     "@types/react": "^18.2.31",
     "@types/react-dom": "^18.2.14",
     "eslint": "^8.42.0",
     "eslint-config-prettier": "^9.1.0",
+    "jest": "^29.7.0",
+    "jest-mock-extended": "^4.0.0-beta1",
     "prettier": "^3.2.4",
     "typescript": "^5.2.2",
     "vite": "^5.1.3"
