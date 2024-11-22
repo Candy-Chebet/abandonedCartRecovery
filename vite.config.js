@@ -52,19 +52,10 @@ export default defineConfig({
   build: {
     assetsInlineLimit: 0,
   },
-  optimiyeDeps: {
+  optimizeDeps: {
     include: ["@remix-run/react"], //Ensure Vite pre-bundles @remix-run/react
   },
-  resolve: {
-    alias: {
-      "@remix-run/react": "node_modules/@remix-run/react",
-    },
-  },
-  // resolve:{
-  //   alias:{
-  //     //ensure vite properly resolves @remix-run/react
-  //     "@remix-run/react": require.resolve("@remix-run/react")
-  //   },
-  // },
+
+
 
 });

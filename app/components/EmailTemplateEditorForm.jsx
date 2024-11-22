@@ -1,28 +1,45 @@
 import { useState } from 'react';
+import { PrismaClient } from '@prisma/client';
+const prisma = new PrismaClient();
 
 export const getAbandonedCartDetails = async (customerId) => {
-
   try {
     const customerWithCarts = await prisma.customer.findUnique({
-      where: {id: customerId},
+      where: { id: customerId },
       include: {
-        abandonedCarts:{
-          include:{
+        abandonedCarts: {
+          include: {
             shop: true,
           },
         },
       },
     });
 
-    return customerWithCarts
+    return customerWithCarts;
   } catch (error) {
-    console.error('error fetching the abandoned carts:', error);
-    throw new Error('Failed to retrieve data')
+    console.error('Error fetching the abandoned carts:', error);
+    throw new Error('Failed to retrieve data');
   }
 };
 
+export const fetchEmailTemplate = async (shopId) => {
+  try {
+    const template = await prisma.emailTemplate.findFirst({
+      where: { shopId },
+    });
 
-export const prepareEmailTemplate = (customer) => {
+    if (!template) {
+      throw new Error('No email template found for this shop.');
+    }
+
+    return template;
+  } catch (error) {
+    console.error('Error fetching email template:', error);
+    throw new Error('Failed to retrieve email template');
+  }
+};
+
+export const prepareEmailTemplate = (customer, template) => {
   // Map over abandoned carts and format each one
   const abandonedCartItems = customer.abandonedCarts
     .map((cart) => {
@@ -45,25 +62,27 @@ export const prepareEmailTemplate = (customer) => {
     })
     .join('<hr>');
 
-  // Combine everything into the final email template
+  // Replace placeholders in the template content
+  const content = template.content
+    .replace('{{customerFirstName}}', customer.firstName)
+    .replace('{{customerLastName}}', customer.lastName)
+    .replace('{{cartDetails}}', abandonedCartItems);
+
   return `
     <div>
-      <h2>Dear ${customer.firstName} ${customer.lastName},</h2>
-      <p>It seems you left some items in your cart. Don't miss out on these amazing products:</p>
-      ${abandonedCartItems}
+      <h2>${template.subject}</h2>
+      ${content}
       <p>Complete your purchase today!</p>
     </div>
   `;
 };
 
-
 export const EmailTemplateEditorForm = ({ template, onTemplateChange }) => {
-  // Add a default value check
   const currentTemplate = template || {
     subject: '',
     content: '',
     logo: '',
-    image: ''
+    image: '',
   };
 
   const handleInputChange = (key, value) => {
@@ -71,7 +90,7 @@ export const EmailTemplateEditorForm = ({ template, onTemplateChange }) => {
   };
 
   const { customer } = currentTemplate;
-  
+
   return (
     <div style={{ padding: '20px' }}>
       <h1>Edit Email Template</h1>
@@ -137,13 +156,21 @@ export const EmailTemplateEditorForm = ({ template, onTemplateChange }) => {
 
         {/* Preview the prepared email template */}
         {customer && (
-          <div style={{ border: '1px solid #ccc', padding: '10px', marginTop: '20px' }}>
+          <div
+            style={{
+              border: '1px solid #ccc',
+              padding: '10px',
+              marginTop: '20px',
+            }}
+          >
             <h3>Email Preview</h3>
             <div
-              dangerouslySetInnerHTML={{ __html: prepareEmailTemplate(customer) }}
+              dangerouslySetInnerHTML={{
+                __html: prepareEmailTemplate(customer, currentTemplate),
+              }}
             ></div>
           </div>
-         )}
+        )}
       </div>
     </div>
   );
