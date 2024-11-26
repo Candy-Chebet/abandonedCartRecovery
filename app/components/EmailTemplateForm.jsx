@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Form } from '@remix-run/react';
-import './emailTemplateForm.css';
+import styles from './emailTemplateForm.css';
 
 
 

@@ -1,7 +1,12 @@
-import { prisma } from '/app/db.server';
+import { prisma } from '/app/db.server'; 
 
 export async function createEmailTemplate(templateData) {
     try {
+        // Ensure templateData is properly structured before passing to Prisma
+        if (!templateData.subject || !templateData.content || !templateData.shopId) {
+            throw new Error('Missing required fields: subject, content, or shopId');
+        }
+
         return await prisma.emailTemplate.create({
             data: {
                 subject: templateData.subject,
@@ -9,54 +14,79 @@ export async function createEmailTemplate(templateData) {
                 logo: templateData.logo,
                 image: templateData.image,
                 shop: {
-                    connect: {id: templateData.shopId},
-
+                    connect: { id: templateData.shopId },
                 },
             },
         });
-    }catch (error) {
-        console.error('error creating email template:', error);
-        throw new Error('Failed to create email template');
+    } catch (error) {
+        console.error('Error creating email template:', error.message || error);
+        throw new Error('Failed to create email template: ' + (error.message || 'Unknown error'));
     }
 }
 
 
 export async function getEmailTemplates(shopId) {
     try {
-        return await prisma.emailTemplate.findMany({
+        if (!shopId) {
+            throw new Error('Shop ID is required');
+        }
+
+        const templates = await prisma.emailTemplate.findMany({
             where: { shopId },
             include: { shop: true },
         });
+
+        if (templates.length === 0) {
+            throw new Error('No email templates found for this shop');
+        }
+
+        return templates;
     } catch (error) {
-        console.error('error not retrieve available templates:', error);
-        throw new Error('Failed to retrieve email templates')
-    }
-} 
-
-export async function getEmailTemplateById(templateId) {
-    try {
-
-        return await prisma.emailTemplate.findUnique({
-            where: {id: templateId},
-            include: {
-                shop: true
-            },
-            
-        })
-
-    } catch(error) {
-        console.error('error retrieving the email template');        throw new Error('Failed to retrieve the email template');
-
+        console.error('Error retrieving email templates:', error.message || error);
+        throw new Error('Failed to retrieve email templates: ' + (error.message || 'Unknown error'));
     }
 }
 
+export async function getEmailTemplateById(templateId) {
+    try {
+        if (!templateId) {
+            throw new Error('Template ID is required');
+        }
+
+        const template = await prisma.emailTemplate.findUnique({
+            where: { id: templateId },
+            include: { shop: true },
+        });
+
+        if (!template) {
+            throw new Error('Email template not found');
+        }
+
+        return template;
+    } catch (error) {
+        console.error('Error retrieving the email template:', error.message || error);
+        throw new Error('Failed to retrieve the email template: ' + (error.message || 'Unknown error'));
+    }
+}
+
+
 export async function deleteEmailTemplate(templateId) {
     try {
-        return await prisma.template.delete({
-            where: { id: templateId},
+        if (!templateId) {
+            throw new Error('Template ID is required');
+        }
+
+        const deletedTemplate = await prisma.emailTemplate.delete({
+            where: { id: templateId },
         });
-    } catch(error) {
-        console.error('Error deleting email template:', error);
-        throw new error('Failed to delete email template');
+
+        if (!deletedTemplate) {
+            throw new Error('Email template not found');
+        }
+
+        return deletedTemplate;
+    } catch (error) {
+        console.error('Error deleting email template:', error.message || error);
+        throw new Error('Failed to delete email template: ' + (error.message || 'Unknown error'));
     }
 }

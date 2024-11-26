@@ -40,13 +40,20 @@ export const fetchEmailTemplate = async (shopId) => {
 };
 
 export const prepareEmailTemplate = (customer, template) => {
-  // Map over abandoned carts and format each one
   const abandonedCartItems = customer.abandonedCarts
     .map((cart) => {
-      // Parse cart items stored as a serialized JSON string
-      const items = JSON.parse(cart.items);
+      let items = cart.items;
 
-      // Format cart items into an HTML list
+      // Check if the items are a string and need to be parsed
+      if (typeof items === 'string') {
+        try {
+          items = JSON.parse(items); // Parse if it's a string
+        } catch (error) {
+          console.error('Error parsing items:', error);
+          items = []; // Fallback to an empty array if parsing fails
+        }
+      }
+
       return `
         <h4>Cart from Shop: ${cart.shop.name}</h4>
         <ul>
@@ -62,7 +69,6 @@ export const prepareEmailTemplate = (customer, template) => {
     })
     .join('<hr>');
 
-  // Replace placeholders in the template content
   const content = template.content
     .replace('{{customerFirstName}}', customer.firstName)
     .replace('{{customerLastName}}', customer.lastName)
@@ -77,12 +83,14 @@ export const prepareEmailTemplate = (customer, template) => {
   `;
 };
 
+
 export const EmailTemplateEditorForm = ({ template, onTemplateChange }) => {
   const currentTemplate = template || {
     subject: '',
     content: '',
     logo: '',
     image: '',
+    customer: null, // Ensure there's a fallback for customer
   };
 
   const handleInputChange = (key, value) => {

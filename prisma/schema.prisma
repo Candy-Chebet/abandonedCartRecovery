@@ -3,56 +3,56 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
-  url      = "file:dev.sqlite"
+  provider = "postgresql"
+  url      = "postgresql://postgres:Postgress2018@localhost:5432/AbandonedCartsRecovery"
 }
 
 model Session {
-  id             String   @id @default(uuid())
-  shop           String
-  state          String
-  isOnline       Boolean
-  scope          String
-  expires        DateTime?
-  accessToken    String
-  userId         String?
-  firstName      String?
-  lastName       String?
-  email          String?
-  accountOwner   Boolean?
-  locale         String?
-  collaborator   Boolean?
-  emailVerified  Boolean?
+  id       String   @id @default(uuid())
+  shop     String
+  state    String
+  isOnline Boolean
+  scope    String
+  expires  DateTime?
+  accessToken   String
+  userId        String?
+  firstName     String?
+  lastName      String?
+  email         String?
+  accountOwner  Boolean?
+  locale        String?
+  collaborator  Boolean?
+  emailVerified Boolean?
 }
 
 model Shop {
-  id             String           @id @default(cuid())
+  id             String          @id @default(cuid())
   name           String
-  domain         String           @unique
+  domain         String          @unique
   accessToken    String?
-  isActive       Boolean          @default(true)
+  isActive       Boolean         @default(true)
   AbandonedCarts AbandonedCart[]
   EmailTemplates EmailTemplate[]
 }
 
 model Customer {
-  id             String           @id @default(cuid())
+  id             String          @id @default(cuid())
   firstName      String
   lastName       String
-  email          String           @unique
+  email          String          @unique
   AbandonedCarts AbandonedCart[]
 }
 
 model AbandonedCart {
-  id             String   @id @default(cuid())
+  id             String    @id @default(cuid())
   shopId         String
-  shop           Shop     @relation(fields: [shopId], references: [id])
+  shop           Shop      @relation(fields: [shopId], references: [id])
   customerId     String
-  customer       Customer @relation(fields: [customerId], references: [id])
+  customer       Customer  @relation(fields: [customerId], references: [id])
   email          String
-  items          String
-  createdAt      DateTime @default(now())
-  reminderSent   Boolean  @default(false)
+  items          Json
+  createdAt      DateTime  @default(now())
+  reminderSent   Boolean   @default(false)
   reminderSentAt DateTime?
 
   @@index([shopId])
@@ -60,15 +60,15 @@ model AbandonedCart {
 }
 
 model EmailTemplate {
-  id             String   @id @default(cuid())
-  shopId         String
-  shop           Shop     @relation(fields: [shopId], references: [id])
-  subject        String
-  content        String
-  logo           String?
-  image          String?
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
+  id        String   @id @default(cuid())
+  shopId    String
+  shop      Shop     @relation(fields: [shopId], references: [id])
+  subject   String
+  content   String
+  logo      String?
+  image     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([shopId])
 }
