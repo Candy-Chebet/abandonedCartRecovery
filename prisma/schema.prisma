@@ -29,7 +29,7 @@ model Shop {
   id             String          @id @default(cuid())
   name           String
   domain         String          @unique
-  accessToken    String?
+  accessToken    String
   isActive       Boolean         @default(true)
   AbandonedCarts AbandonedCart[]
   EmailTemplates EmailTemplate[]
@@ -60,15 +60,17 @@ model AbandonedCart {
 }
 
 model EmailTemplate {
-  id        String   @id @default(cuid())
-  shopId    String
-  shop      Shop     @relation(fields: [shopId], references: [id])
-  subject   String
-  content   String
-  logo      String?
-  image     String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+    id        String   @id @default(cuid())
+    name      String
+    subject   String
+    content   String   @db.Text
+    design    String?  @db.Text
+    logo      String?
+    image     String?
+    shopId    String
+    shop      Shop     @relation(fields: [shopId], references: [id])
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
 
-  @@index([shopId])
+    @@index([shopId])
 }

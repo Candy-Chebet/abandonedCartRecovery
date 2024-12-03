@@ -1,274 +1,309 @@
-import { useRef, useState } from 'react';
-import { EmailEditor } from 'react-email-editor';
-
-import { json } from '@remix-run/node';
-import { useLoaderData, useSubmit } from '@remix-run/react';
-import { authenticate } from '../shopify.server';
-import { getEmailTemplates, createEmailTemplate } from '../lib/database/emailTemplate.server';
-//import defaultTemplate from '../data/defaultTemplate';
-import { getShopAbandonedCarts } from '../lib/database/abandonedCart.server';
+import { useRef, useState } from "react";
+import { EmailEditor } from "react-email-editor";
+import { json } from "@remix-run/node";
+import { useLoaderData, useSubmit } from "@remix-run/react";
+import { authenticate } from "../shopify.server";
+import { getEmailTemplates, createEmailTemplate } from "../lib/database/emailTemplate.server";
+import defaultTemplate from "../data/defaultTemplate";
+import { getShopAbandonedCarts } from "../lib/database/abandonedCart.server";
+import { renderToString } from "react-dom/server";
 
 // Loader function remains the same
 export async function loader({ request }) {
   const { session } = await authenticate.admin(request);
-  const shopId = session.shop;
+  const shopDomain = session.shop;
 
-  // Abandoned carts and templates logic
+  const shop = await prisma.shop.upsert({
+    where: { domain: 'candystoredev.myshopify.com' },
+    update: { accessToken: 'token...' },
+    create: {
+      id: 'generated_cuid',
+      name: 'Candy Store Dev',
+      domain: 'candystoredev.myshopify.com',
+      accessToken: 'token...',
+      isActive: true,
+    },
+  });
+
   let abandonedCarts = [];
   try {
-    abandonedCarts = await getShopAbandonedCarts(shopId);
+    abandonedCarts = await getShopAbandonedCarts(shop.id);
   } catch (error) {
-    console.log('No abandoned carts found, using default template');
-    abandonedCarts = [];
+    console.error("Error fetching abandoned carts:", error);
   }
-
-  if (!Array.isArray(abandonedCarts)) {
-    abandonedCarts = [];
-  }
-
-  if (abandonedCarts.length === 0) {
-    abandonedCarts = [
-      {
-        timeFrame: 'Default',
-        carts: [
-          {
-            id: 'default',
-            customer: { firstName: 'John', lastName: 'Doe' },
-            lastUpdated: new Date(),
-            recoveryUrl: 'https://default-url.com',
-            items: [{ name: 'item1', quantity: 1 }, { name: 'item2', quantity: 2 }, { name: 'item3', quantity: 1 }], // JSON string for items
-          },
-        ],
-      },
-    ];
-  }
-
-  const defaultTemplate = {
-    subject: 'Your Cart is waiting for you!',
-    logo: '/logo.png',
-    content: (
-        <div>
-            <h1>Hey there!</h1>
-            <p>Looks like you left some items in your cart. Don't worry, we've saved them for you.</p>
-            <a href="/cart">Go to cart</a>
-            <img src="/cart.png" alt="Cart items" />
-        </div>
-    )
-}
-
 
   let templates = [];
   try {
-    templates = await getEmailTemplates(shopId);
+    templates = await getEmailTemplates(shop.id);
+
+    // console.log("here is the template", templates);
   } catch (error) {
-    console.log('No email templates found, using default template');
-    templates = [
-      {
-        id: 'default',
-        name: 'Default Template',
-        subject: defaultTemplate.subject,
-        body: defaultTemplate.content,
-        logo: defaultTemplate.logo,      // Optionally use logo if needed
-        image: '/cart.png',  
-      },
-    ];
+    console.error("Error fetching email templates:", error);
   }
 
-  if (!Array.isArray(templates)) {
-    templates = [];
-  }
-
-  return json({
-    templates,
-    abandonedCarts,
-  });
+  return json({ templates, abandonedCarts, shop });
 }
-
-
-
-// Styles
-const styles = {
-  container: {
-    padding: '20px',
-    maxWidth: '1200px',
-    margin: '0 auto',
-  },
-  header: {
-    fontSize: '24px',
-    fontWeight: 'bold',
-    marginBottom: '20px',
-  },
-  editorContainer: {
-    border: '1px solid #ccc',
-    borderRadius: '4px',
-    marginBottom: '20px',
-  },
-  button: {
-    backgroundColor: '#008060',
-    color: 'white',
-    padding: '10px 20px',
-    border: 'none',
-    borderRadius: '4px',
-    cursor: 'pointer',
-    marginRight: '10px',
-  },
-  templateList: {
-    marginTop: '30px',
-  },
-  templateItem: {
-    border: '1px solid #e5e5e5',
-    padding: '15px',
-    marginBottom: '15px',
-    borderRadius: '4px',
-  },
-};
 
 export async function action({ request }) {
   const { session } = await authenticate.admin(request);
-  const shopId = session.shop;
+  const shopDomain = session.shop;
+
+  const shop = await prisma.shop.upsert({
+    where: { domain: 'candystoredev.myshopify.com' },
+    update: { accessToken: 'token...' },
+    create: {
+      id: 'generated_cuid',
+      name: 'Candy Store Dev',
+      domain: 'candystoredev.myshopify.com',
+      accessToken: 'token...',
+      isActive: true
+    },
+  });
 
   const formData = await request.formData();
   const templateData = {
-    shopId: formData.get('shopId'),
-    subject: formData.get('subject'),
-    content: formData.get('content'),
-    logo: formData.get('logo'),
-    image: formData.get('image'),
-    shopId,
+    shopId: shop.id,
+    name: formData.get("name"),
+    subject: formData.get("subject"),
+    content: formData.get("content"),
+    design: formData.get("design"),
+    logo: formData.get("logo"),
   };
 
   try {
-    await createEmailTemplate(templateData); // Create the template in the database
-    return json({ templateData });
+    const result = await createEmailTemplate(templateData);
+    return json({ success: true, template: result });
   } catch (err) {
-    console.error('Error saving template:', err);
-    return json({ error: 'Failed to save email template' }, { status: 500 });
+    console.error("Error saving template:", err);
+    return json({ error: "Failed to save email template" }, { status: 500 });
   }
 }
 
 export default function Templates() {
-  const loaderData = useLoaderData() || {};
-  const { templates = [], abandonedCarts = [] } = loaderData;
-  const emailEditorRef = useRef(null);
+  const { templates = [], abandonedCarts = [] } = useLoaderData() || {};
+  const emailEditorRef = useRef("");
   const submit = useSubmit();
+  const [templateName, setTemplateName] = useState("");
+  const [isSaving, setIsSaving] = useState(false);
+  const [error, setError] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+
+  const styles = {
+    container: {
+      padding: "20px",
+      maxWidth: "1200px",
+      margin: "0 auto",
+    },
+    header: {
+      fontSize: "24px",
+      fontWeight: "bold",
+      marginBottom: "20px",
+    },
+    editorContainer: {
+      border: "1px solid #ccc",
+      borderRadius: "4px",
+      marginBottom: "20px",
+      minHeight: "700px",
+    },
+    button: {
+      backgroundColor: "#008060",
+      color: "white",
+      padding: "10px 20px",
+      border: "none",
+      borderRadius: "4px",
+      cursor: "pointer",
+      marginRight: "10px",
+    },
+    input: {
+      padding: "8px 12px",
+      borderRadius: "4px",
+      border: "1px solid #ccc",
+      fontSize: "14px",
+      marginRight: "10px",
+      width: "300px",
+    },
+    error: {
+      color: "red",
+      marginTop: "10px",
+    },
+    templateList: {
+      marginTop: "30px",
+    },
+    templateItem: {
+      border: "1px solid #e5e5e5",
+      padding: "15px",
+      marginBottom: "15px",
+      borderRadius: "4px",
+      display: "flex",
+      justifyContent: "space-between",
+      alignItems: "center",
+    },
+  };
 
   const onReady = () => {
-    if (emailEditorRef.current) {const htmlContent = ReactDOMServer.renderToStaticMarkup(defaultTemplate.content);
-      emailEditorRef.current.editor.loadDesign(htmlContent); // Load HTML content// Load default template
+    if (emailEditorRef.current && defaultTemplate?.content) {
+      try {
+        const htmlContent = renderToString(defaultTemplate.content);
+        emailEditorRef.current.editor.loadDesign({
+          html: htmlContent,
+        });
+      } catch (error) {
+        console.error("Error loading default template:", error);
+        setError("Failed to load default template");
+      }
     }
   };
 
   const saveTemplate = () => {
-    if (emailEditorRef.current) {
-      emailEditorRef.current.editor.exportHtml(() => {
-        const formData = new FormData();
-        formData.append('subject', 'Abandoned Cart Recovery');
-        formData.append('logo', '{{{emailTemplate.logo}}}');
-        submit(formData, { method: 'post' });
-      });
+    if (!emailEditorRef.current || isSaving) return;
+    if (!templateName.trim()) {
+      setError("Please enter a template name");
+      return;
     }
+
+    setIsSaving(true);
+    setError("");
+
+    emailEditorRef.current.editor.exportHtml((data) => {
+      try {
+        const { html, design } = data;
+        const formData = new FormData();
+        formData.append("name", templateName.trim());
+        formData.append("subject", "Abandoned Cart Recovery");
+        formData.append("content", html);
+        formData.append("design", JSON.stringify(design));
+        formData.append("logo", "{{{emailTemplate.logo}}}");
+
+        submit(formData, {
+          method: "post",
+          onFinish: () => {
+            setIsSaving(false);
+            setTemplateName("");
+            setError("");
+          },
+        });
+      } catch (error) {
+        console.error("Error saving template:", error);
+        setError("Failed to save template");
+        setIsSaving(false);
+      }
+    });
   };
 
   const loadTemplate = (template) => {
-    if (emailEditorRef.current) {
-      emailEditorRef.current.editor.loadDesign(template.content); // Load saved template
+    if (!emailEditorRef.current || !template) {
+      setError("Cannot load template: Editor not ready or template is invalid");
+      return;
+    }
+
+    setIsLoading(true);
+    setError("");
+
+    try {
+      const defaultDesign = {
+        body: {
+          rows: [],
+          values: {
+            backgroundColor: "#ffffff",
+            width: "600px",
+            padding: "0px",
+          },
+        },
+      };
+
+      let designData;
+      try {
+        designData = template.design ? JSON.parse(template.design) : defaultDesign;
+      } catch (e) {
+        console.warn("Could not parse template design, using default:", e);
+        designData = defaultDesign;
+      }
+
+      const htmlContent = template.content || '<div></div>';
+
+      emailEditorRef.current.editor.loadDesign({
+        html: htmlContent,
+        design: designData,
+      });
+
+      setTemplateName(template.name || "");
+      setError("");
+    } catch (error) {
+      console.error("Error loading template:", error);
+      setError(`Failed to load template: ${template.name}`);
+    } finally {
+      setIsLoading(false);
     }
   };
 
   return (
     <div style={styles.container}>
       <h1 style={styles.header}>Email Templates</h1>
+      <div>
+        <input
+          type="text"
+          value={templateName}
+          onChange={(e) => setTemplateName(e.target.value)}
+          placeholder="Template Name"
+          style={styles.input}
+        />
+        <button
+          style={{
+            ...styles.button,
+            opacity: isSaving || isLoading ? 0.7 : 1,
+            cursor: isSaving || isLoading ? "not-allowed" : "pointer",
+          }}
+          onClick={saveTemplate}
+          disabled={isSaving || isLoading}
+        >
+          {isSaving ? "Saving..." : "Save Template"}
+        </button>
+        {error && <div style={styles.error}>{error}</div>}
+      </div>
+
       <div style={styles.editorContainer}>
         <EmailEditor
           ref={emailEditorRef}
           onReady={onReady}
-          minHeight="700px"
           options={{
-            customCSS: ['https://fonts.googleapis.com/css?family=Open+Sans'],
             features: {
               textEditor: {
-                tables: true,
-                cleanPaste: true,
+                color: true,
+                fontFamily: true,
+                fontSize: true,
               },
             },
-            mergeTags: [
-              {
-                name: 'Shop',
-                tags: [
-                  { name: 'Logo', value: '{{{shop.logo}}}' },
-                  { name: 'Name', value: '{{{shop.name}}}' },
-                ],
-              },
-              {
-                name: 'Customer',
-                tags: [
-                  { name: 'First Name', value: '{{{customer.firstName}}}' },
-                  { name: 'Last Name', value: '{{{customer.lastName}}}' },
-                  { name: 'Email', value: '{{{customer.email}}}' },
-                ],
-              },
-              {
-                name: 'Cart',
-                tags: [
-                  { name: 'Recovery URL', value: '{{{cart.recoveryUrl}}}' },
-                  { name: 'Total', value: '{{{cart.total}}}' },
-                ],
-              },
-            ],
+            appearance: {
+              theme: "light",
+            },
           }}
         />
       </div>
 
-      <button style={styles.button} onClick={saveTemplate}>
-        Save Template
-      </button>
-
       <div style={styles.templateList}>
         <h2 style={styles.header}>Existing Templates</h2>
-        {templates && templates.length === 0 ? (
+        {templates.length === 0 ? (
           <p>No templates found</p>
         ) : (
           templates.map((template) => (
             <div key={template.id} style={styles.templateItem}>
-              <h3>{template.subject}</h3>
+              <div>
+                <h3>{template.name || "Untitled Template"}</h3>
+                <p>{template.subject}</p>
+              </div>
               <button
-                style={styles.button}
+                style={{
+                  ...styles.button,
+                  opacity: isLoading ? 0.7 : 1,
+                  cursor: isLoading ? "not-allowed" : "pointer",
+                }}
                 onClick={() => loadTemplate(template)}
+                disabled={isLoading}
               >
-                Load Template
+                {isLoading ? "Loading..." : "Load"}
               </button>
             </div>
           ))
-        )}
-      </div>
-
-      <div style={styles.templateList}>
-        <h2 style={styles.header}>Abandoned Carts</h2>
-        {abandonedCarts.length === 0 ? (
-          <p>No abandoned carts found</p>
-        ) : (
-          abandonedCarts.map((cart) => {
-            const itemCount = cart.carts ? cart.carts.length : 0;
-            return (
-              <div key={cart.timeFrame} style={styles.templateItem}>
-                <h3>{cart.timeFrame} Abandoned Carts: {itemCount}</h3>
-                {cart.carts &&
-                  cart.carts.map((cartItem, index) => (
-                    <div key={index}>
-                      Customer: {cartItem.customer.firstName}{' '}
-                      {cartItem.customer.lastName}
-                      <ul>
-                        {cartItem.items.map((item, idx) => (
-                          <li key={idx}>
-                            {item.name} (x{item.quantity})
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  ))}
-              </div>
-            );
-          })
         )}
       </div>
     </div>
